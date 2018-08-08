@@ -1,0 +1,12 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <div class="container-fluid">
+    <h1>{{article.title}}</h1>
+    <small>Written by {{article.author}} on {{article.create_date}}</small>
+    <hr>
+  </div>
+  <div class="container-fluid">
+  	{{article.body | safe}}
+  </div>
+{% endblock %}
