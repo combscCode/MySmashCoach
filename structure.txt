@@ -1,0 +1,71 @@
+Features:
+Whenever you turn it on, it gives you a customized practice schedule for the day.
+
+Pages:
+	Home: /
+		This is where you train
+			Contains today's training regimen
+			Contains stopwatch
+	About: /about
+		Explains the purpose of the website and how to use it
+	Set Schedule: /schedule
+		Lets you build your own practice schedule manually or let algorithm do it
+	Skills: /skills
+		Lets you categorize skills into 3 categories
+		Fundamental
+		Maintain
+		Learn
+	Exercises: /exercises
+		Where you can make your own exercises
+		TODO: Find other people's exercises, add them to your list
+	Login: /login
+		Logs in the user
+	Register: /register
+		Register for an account
+	Settings: /settings
+		Days per week they will practice
+		Length of practice session (per day)
+		Ability to categorize skill as a "Fundamental"
+		Skills to maintain
+		Skills to focus on
+	Logout: /logout
+		Logs user out when selected
+
+character is an int, 0-26
+
+Database:
+
+users:
+	id (PRIMARY KEY, ASCENDING INCREMENT):
+	Username (UNIQUE):
+	Password
+	Mains[implement as a list]
+
+	fundamentals
+	skills_to_maintain
+	skills_to_learn
+
+skills:
+	id (PRIMARY KEY, ASCENDING INCREMENT):
+
+	Title (UNIQUE):
+
+	Description:
+
+	character:
+
+
+
+exercises:
+	id (PRIMARY KEY, ASCENDING INCREMENT):
+
+	Title: 
+
+	Skill Practiced:
+
+	Description:
+
+	Character:
+
+	Attached Links:
+

@@ -1,0 +1,23 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1>Exercises</h1>
+  <a class='btn btn-success' href='/add_exercise'>Add Exercise</a>
+  <hr>
+  <table class='table table-striped'>
+  	<tr>
+  	  <th>Title</th>
+      <th>Skill Practiced</th>
+  	  <th>Character</th>
+      <th>Opponent</th>
+  	</tr>
+  	{% for exercise in exercises %}
+  	  <tr>
+  	  	<td><a href="article/{{exercise.id}}" class="btn btn-outline-primary">{{exercise.title}}</td>
+        <td>{{exercise.skillid}}</td>
+        <td>{{CHARACTER_LIST[exercise.main][1]}}</td>
+  	  	<td>{{CHARACTER_LIST[exercise.opponent][1]}}</td>
+  	  </tr>
+  	{% endfor %}
+  </table>
+{% endblock %}

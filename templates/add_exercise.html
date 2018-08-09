@@ -1,0 +1,24 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1>Add Exercise</h1>
+  {% from 'includes/_formhelpers.html' import render_field %}
+  <form action="" method="POST">
+    <div class="form-group">
+      {{ render_field(form.title, class_="form-control") }}
+    </div>
+    <div class="form-group">
+      {{ render_field(form.description, class_="form-control", id = "editor") }}
+    </div>
+    <div class="form-group">
+      {{ render_field(form.skillid, class_="form-control") }}
+    </div>
+    <div class="form-group">
+      {{ render_field(form.main, class_="form-control") }}
+    </div>
+    <div class="form-group">
+      {{ render_field(form.opponent, class_="form-control") }}
+    </div>
+    <p><input class="btn btn-primary" type="submit" value="Submit"></p>
+  </form>
+{% endblock %}
