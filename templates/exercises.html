@@ -2,21 +2,30 @@
 
 {% block body %}
   <h1>Exercises</h1>
-  <a class='btn btn-success' href='/add_exercise'>Add Exercise</a>
+  <a class='btn btn-success' href='/create_exercise'>Create Exercise</a>
   <hr>
   <table class='table table-striped'>
   	<tr>
   	  <th>Title</th>
-      <th>Skill Practiced</th>
+      <th>Type</th>
   	  <th>Character</th>
       <th>Opponent</th>
+      <th></th>
+      <th></th>
   	</tr>
   	{% for exercise in exercises %}
   	  <tr>
-  	  	<td><a href="article/{{exercise.id}}" class="btn btn-outline-primary">{{exercise.title}}</td>
-        <td>{{exercise.skillid}}</td>
+  	  	<td><a href="exercise/{{exercise.id}}" class="btn btn-outline-primary">{{exercise.title}}</td>
+        <td>{{exercise.type}}</td>
         <td>{{CHARACTER_LIST[exercise.main][1]}}</td>
   	  	<td>{{CHARACTER_LIST[exercise.opponent][1]}}</td>
+        <td><a href="edit_exercise/{{exercise.id}}" class="btn btn-secondary float-right">Edit</a></td>
+        <td>
+          <form action="{{url_for('delete_exercise', id=exercise.id)}}" method="post">
+            <input type="hidden" name="method" value="DELETE">
+            <input type="submit" value="Delete" class="btn btn-danger">
+          </form>
+        </td>
   	  </tr>
   	{% endfor %}
   </table>

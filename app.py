@@ -52,22 +52,22 @@ class SkillForm(Form):
 	main = SelectField('Character', choices=CHARACTER_LIST, coerce=int)
 	opponent = SelectField('Opponent', choices=CHARACTER_LIST, coerce=int)
 
-@app.route('/skills')
+@app.route('/training_settings')
 @is_logged_in
-def skills():
+def training_settings():
 	cur = mysql.connection.cursor()
 	requests = cur.execute("SELECT * FROM skills")
 	skills = cur.fetchall()
 	cur.close()
 	if requests > 0:
-		return render_template('skills.html', skills=skills, CHARACTER_LIST=CHARACTER_LIST)
+		return render_template('training_settings.html', skills=skills, CHARACTER_LIST=CHARACTER_LIST)
 	else:
 		msg = "No skills found, start by adding a skill!"
-		return render_template('skills.html', msg=msg)
+		return render_template('training_settings.html', msg=msg)
 
-@app.route('/add_skill', methods=['GET', 'POST'])
+@app.route('/create_skill', methods=['GET', 'POST'])
 @is_logged_in
-def add_skill():
+def create_skill():
 	form = SkillForm(request.form)
 	if(request.method == 'POST' and form.validate()):
 		title = form.title.data
@@ -91,11 +91,19 @@ def add_skill():
 
 		flash("Skill added", "success")
 		
-		return redirect(url_for('dashboard'))
+		return redirect(url_for('train'))
 
-	return render_template('add_skill.html', form=form)
+	return render_template('create_skill.html', form=form)
 
-#Article Form Class
+@app.route('/skill/<string:id>')
+def skill(id):
+	cur = mysql.connection.cursor()
+	requests = cur.execute("SELECT * FROM skills WHERE id = %s", [id])
+	skill = cur.fetchone()
+
+	return render_template('skill.html', skill=skill)
+
+#Exercise Form Class
 class ExerciseForm(Form):
 	title = StringField('Title', [validators.Length(min = 1, max = 200)])
 	description = TextAreaField('Description', [validators.Length(min = 0)])
@@ -116,9 +124,9 @@ def exercises():
 		msg = "No exercises found, start by adding an exercise!"
 		return render_template('exercises.html', msg=msg)
 
-@app.route('/add_exercise', methods=['GET', 'POST'])
+@app.route('/create_exercise', methods=['GET', 'POST'])
 @is_logged_in
-def add_exercise():
+def create_exercise():
 	cur = mysql.connection.cursor()
 	requests = cur.execute("SELECT id, title FROM skills")
 	skills = cur.fetchall()
@@ -142,8 +150,15 @@ def add_exercise():
 
 	cur.close()
 
-	return render_template('add_exercise.html', form=form)
+	return render_template('create_exercise.html', form=form)
 
+@app.route('/exercise/<string:id>')
+def exercise(id):
+	cur = mysql.connection.cursor()
+	requests = cur.execute("SELECT * FROM exercises WHERE id = %s", [id])
+	exercise = cur.fetchone()
+
+	return render_template('exercise.html', exercise=exercise)
 	
 
 @app.route('/article/<string:id>')
@@ -211,7 +226,7 @@ def login():
 				session['username'] = username
 
 				flash('You are now logged in', 'success')
-				return redirect(url_for('dashboard'))
+				return redirect(url_for('train'))
 			else:
 				error = 'Invalid login'
 				app.logger.info('PASSWORD NOT MATCHED')
@@ -235,68 +250,40 @@ def logout():
 	flash('Successfully logged out', 'success')
 	return redirect(url_for('index'))
 
-@app.route('/dashboard')
+@app.route('/training')
 @is_logged_in
-def dashboard():
+def train():
 
 	cur = mysql.connection.cursor()
 
-	result = cur.execute("SELECT * FROM skills")
+	result = cur.execute("SELECT * FROM exercises")
 
-	skills = cur.fetchall()
+	exercises = cur.fetchall()
 
 	cur.close()
 	if result > 0:
-		return render_template('dashboard.html', skills=skills, CHARACTER_LIST=CHARACTER_LIST)
+		return render_template('train.html', exercises=exercises, CHARACTER_LIST=CHARACTER_LIST)
 	else:
 		msg = 'No articles found'
-		return render_template('dashboard.html', msg=msg)
-	
-
-#Article Form Class
-class ArticleForm(Form):
-	title = StringField('Title', [validators.Length(min = 1, max = 200)])
-	body = TextAreaField('Body', [validators.Length(min = 30)])
+		return render_template('train.html', msg=msg)
 
 
-@app.route('/add_article', methods=['GET', 'POST'])
+@app.route('/edit_exercise/<string:id>', methods=['GET', 'POST'])
 @is_logged_in
-def add_article():
-	form = ArticleForm(request.form)
-	if(request.method == 'POST' and form.validate()):
-		title = form.title.data
-		body = form.body.data
-
-		cur = mysql.connection.cursor()
-
-		cur.execute("INSERT INTO articles(title, body, author) VALUES(%s, %s, %s)", (title, body, session['username']))
-
-		mysql.connection.commit()
-
-		cur.close()
-
-		flash("Article added", "success")
-		
-		return redirect(url_for('dashboard'))
-
-	return render_template('add_article.html', form=form)
-
-@app.route('/edit_article/<string:id>', methods=['GET', 'POST'])
-@is_logged_in
-def edit_article(id):
+def edit_exercise(id):
 
 	#Create cursor
 	cur = mysql.connection.cursor()
 
 	#Get article
-	result = cur.execute("SELECT * FROM articles WHERE id = %s", [id])
-	article = cur.fetchone()
+	result = cur.execute("SELECT * FROM exercises WHERE id = %s", [id])
+	exercise = cur.fetchone()
 
 	#Get form
-	form = ArticleForm(request.form)
+	form = ExerciseForm(request.form)
 	#Populate article form fields
 	form.title.data = article['title']
-	form.body.data = article['body']
+	form.description.data = article['description']
 
 	if(request.method == 'POST' and form.validate()):
 		title = request.form['title']
@@ -312,28 +299,21 @@ def edit_article(id):
 
 		flash("Article Updated", "success")
 		
-		return redirect(url_for('dashboard'))
+		return redirect(url_for('train'))
 
 	return render_template('edit_article.html', form=form)
 
-@app.route('/delete_article/<string:id>', methods=['POST'])
+@app.route('/delete_exercise/<string:id>', methods=['POST'])
 @is_logged_in
-def delete_article(id):
+def delete_exercise(id):
 	cur = mysql.connection.cursor()
-	cur.execute("SELECT * FROM articles WHERE id = %s", [id])
-	article = cur.fetchone()
 
-	if session['username'] != article['author']:
-		flash("You do not have permission over that article", 'danger')
-		cur.close()
-		return redirect(url_for('dashboard'))
-
-	result = cur.execute("DELETE FROM articles WHERE id = %s AND author = %s", (id, session['username']))
+	result = cur.execute("DELETE FROM exercises WHERE id = %s", [id])
 	mysql.connection.commit()
 	cur.close()
 
-	flash("Article deleted", 'success')
-	return redirect(url_for('dashboard'))
+	flash("Exercise deleted", 'success')
+	return redirect(url_for('exercise'))
 
 if __name__ == '__main__':
 	app.secret_key='secret123'
