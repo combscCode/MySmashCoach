@@ -1,14 +1,17 @@
 from flask import Flask, render_template, flash, redirect, url_for, session, logging, request
 from flask_mysqldb import MySQL
-from wtforms import Form, StringField, TextAreaField, PasswordField, validators, SelectField
+from wtforms import Form, StringField, TextAreaField, PasswordField, validators, SelectField, IntegerField
 from passlib.hash import sha256_crypt
 from functools import wraps
+import trainingAlgorithms
 
 CHARACTER_LIST = [(0, "Any"), (1, "Fox"), (2, "Falco"), (3, "Marth"), (4, "Sheik"), (5, "Jigglypuff"),
 (6, "Peach"), (7, "Ice Climbers"), (8, "Captain Falcon"), (9, "Pikachu"), (10, "Samus"), (11, "Dr. Mario"),
 (12, "Yoshi"), (13, "Luigi"), (14, "Ganondorf"), (15, "Mario"), (16, "Young Link"), (17, "Donkey Kong"),
 (18, "Link"), (19, "Mr. Game & Watch"), (20, "Roy"), (21, "Mewtwo"), (22, "Zelda"), (23, "Ness"), (24, "Pichu"), 
 (25, "Bowser"), (26, "Kirby")]
+
+PRIORITY_LIST = [(0, "Fundamental"), (1, "Maintain"), (2, "Learning")]
 
 app = Flask(__name__)
 
@@ -33,6 +36,12 @@ def is_logged_in(f):
 			return redirect(url_for('login'))
 	return wrap
 
+def getUserID(username):
+	cur = mysql.connection.cursor()
+	user = cur.execute("SELECT * FROM users WHERE username=%s", [username])
+	user = cur.fetchone()
+	return user['id']
+
 @app.route('/')
 def index():
 	return redirect(url_for('home'))
@@ -45,108 +54,58 @@ def home():
 def about():
 	return render_template('about.html')
 
-#Skill Form Class
-class SkillForm(Form):
-	title = StringField('Title', [validators.Length(min = 1, max = 200)])
-	description = TextAreaField('Description', [validators.Length(min = 0)])
-	main = SelectField('Character', choices=CHARACTER_LIST, coerce=int)
-	opponent = SelectField('Opponent', choices=CHARACTER_LIST, coerce=int)
-
-@app.route('/training_settings')
-@is_logged_in
-def training_settings():
-	cur = mysql.connection.cursor()
-	requests = cur.execute("SELECT * FROM skills")
-	skills = cur.fetchall()
-	cur.close()
-	if requests > 0:
-		return render_template('training_settings.html', skills=skills, CHARACTER_LIST=CHARACTER_LIST)
-	else:
-		msg = "No skills found, start by adding a skill!"
-		return render_template('training_settings.html', msg=msg)
-
-@app.route('/create_skill', methods=['GET', 'POST'])
-@is_logged_in
-def create_skill():
-	form = SkillForm(request.form)
-	if(request.method == 'POST' and form.validate()):
-		title = form.title.data
-		body = form.description.data
-		main = form.main.data
-		opponent = form.opponent.data
-
-		cur = mysql.connection.cursor()
-
-		requests = cur.execute("SELECT * FROM skills WHERE title = %s AND main = %s", (title, main))
-		if requests > 0:
-			cur.close()
-			flash("The skill '" + title + "'' is already in the database", 'danger')
-			return redirect(url_for('skills'))
-
-		cur.execute("INSERT INTO skills(title, description, main, opponent) VALUES(%s, %s, %s, %s)", (title, body, main, opponent))
-
-		mysql.connection.commit()
-
-		cur.close()
-
-		flash("Skill added", "success")
-		
-		return redirect(url_for('train'))
-
-	return render_template('create_skill.html', form=form)
-
-@app.route('/skill/<string:id>')
-def skill(id):
-	cur = mysql.connection.cursor()
-	requests = cur.execute("SELECT * FROM skills WHERE id = %s", [id])
-	skill = cur.fetchone()
-
-	return render_template('skill.html', skill=skill)
 
 #Exercise Form Class
+class ExercisePForm(Form):
+	title = StringField('Title', [validators.Length(min = 1, max = 200)])
+	description = TextAreaField('Description', [validators.Length(min = 0)])
+	exercise_type = StringField('Exercise Type', [validators.Length(min = 1, max = 50)])
+	main = SelectField('Character', choices=CHARACTER_LIST, coerce=int)
+	opponent = SelectField('Opponent', choices=CHARACTER_LIST, coerce=int)
+	priority = SelectField('Priority', choices=PRIORITY_LIST, coerce=int)
+
 class ExerciseForm(Form):
 	title = StringField('Title', [validators.Length(min = 1, max = 200)])
 	description = TextAreaField('Description', [validators.Length(min = 0)])
-	skillid = SelectField('Skill Practiced', choices=[], coerce=int)
+	exercise_type = StringField('Exercise Type', [validators.Length(min = 1, max = 50)])
 	main = SelectField('Character', choices=CHARACTER_LIST, coerce=int)
 	opponent = SelectField('Opponent', choices=CHARACTER_LIST, coerce=int)
 
-@app.route('/exercises')
+@app.route('/my_exercises')
 @is_logged_in
-def exercises():
+def my_exercises():
 	cur = mysql.connection.cursor()
-	requests = cur.execute("SELECT * FROM exercises")
+	userID = getUserID(session['username'])
+	requests = cur.execute("SELECT * FROM user_exercise INNER JOIN exercises ON user_exercise.exercise_id=exercises.id WHERE user_exercise.user_id=%s ORDER BY priority", [userID])
 	exercises = cur.fetchall()
 	cur.close()
 	if requests > 0:
-		return render_template('exercises.html', exercises=exercises, CHARACTER_LIST=CHARACTER_LIST)
+		return render_template('my_exercises.html', exercises=exercises, CHARACTER_LIST=CHARACTER_LIST, PRIORITY_LIST=PRIORITY_LIST)
 	else:
 		msg = "No exercises found, start by adding an exercise!"
-		return render_template('exercises.html', msg=msg)
+		return render_template('my_exercises.html', msg=msg)
 
 @app.route('/create_exercise', methods=['GET', 'POST'])
 @is_logged_in
 def create_exercise():
 	cur = mysql.connection.cursor()
-	requests = cur.execute("SELECT id, title FROM skills")
-	skills = cur.fetchall()
-	choices = []
-	for skill in skills:
-		choices.append((skill['id'], skill['title']))
-	form = ExerciseForm(request.form)
-	form.skillid.choices = choices
-
+	form = ExercisePForm(request.form)
 	if(request.method == 'POST' and form.validate()):
 		title = form.title.data
 		description = form.description.data
-		skillid = form.skillid.data
+		exercise_type = form.exercise_type.data
 		main = form.main.data
 		opponent = form.opponent.data
-		cur.execute("INSERT INTO exercises(title, skillid, description, main, opponent) VALUES(%s, %s, %s, %s, %s)", (title, skillid, description, main, opponent))
+		priority = form.priority.data
+		cur.execute("INSERT INTO exercises(title, author, exercise_type, description, main, opponent) VALUES(%s, %s, %s, %s, %s, %s)", (title, session['username'], exercise_type, description, main, opponent))
+		mysql.connection.commit()
+		result = cur.execute("SELECT id FROM exercises WHERE title=%s AND main=%s AND opponent=%s", (title, main, opponent))
+		exercise_id = cur.fetchone()
+		cur.execute("INSERT INTO user_exercise(user_id, exercise_id, priority) VALUES(%s, %s, %s)", (getUserID(session['username']), exercise_id['id'], priority))
 		mysql.connection.commit()
 		cur.close()
 		flash("Exercise added", 'success')
-		return redirect(url_for('exercises'))
+		return redirect(url_for('my_exercises'))
 
 	cur.close()
 
@@ -159,16 +118,111 @@ def exercise(id):
 	exercise = cur.fetchone()
 
 	return render_template('exercise.html', exercise=exercise)
-	
 
-@app.route('/article/<string:id>')
-def article(id):
+@app.route('/edit_exercise/<string:id>', methods=['GET', 'POST'])
+@is_logged_in
+def edit_exercise(id):
+
+	#Create cursor
 	cur = mysql.connection.cursor()
-	requests = cur.execute("SELECT * FROM articles WHERE id = %s", [id])
-	article = cur.fetchone()
 
+	#Get exericse
+	result = cur.execute("SELECT * FROM exercises WHERE id = %s", [id])
+	exercise = cur.fetchone()
 
-	return render_template('article.html', article=article)
+	if(exercise['author'] != session['username']):
+		cur.close()
+		flash("Cannot edit exercise that you did not create", "danger")
+		return redirect(url_for('my_exercises'))
+
+	#Get form
+	form = ExerciseForm(request.form)
+	#Populate exercise form fields
+	form.title.data = exercise['title']
+	form.description.data = exercise['description']
+	form.exercise_type.data = exercise['exercise_type']
+	form.main.data = exercise['main']
+	form.opponent.data = exercise['opponent']
+
+	if(request.method == 'POST' and form.validate()):
+		title = request.form['title']
+		description = request.form['description']
+		exercise_type = request.form['exercise_type']
+		main = request.form['main']
+		opponent = request.form['opponent']
+
+		cur = mysql.connection.cursor()
+
+		cur.execute("UPDATE exercises SET title=%s, description=%s, exercise_type=%s, main=%s, opponent=%s WHERE id = %s", (title, description, exercise_type, main, opponent, exercise['id']))
+
+		mysql.connection.commit()
+
+		cur.close()
+
+		flash("Exercise Edited", "success")
+		
+		return redirect(url_for('training'))
+
+	return render_template('edit_exercise.html', form=form)
+
+@app.route('/delete_exercise/<string:id>', methods=['POST'])
+@is_logged_in
+def delete_exercise(id):
+	cur = mysql.connection.cursor()
+	result = cur.execute("SELECT * FROM exercises WHERE id = %s", [id])
+	result = cur.fetchone()
+	if result['author'] != session['username']:
+		flash("You cannot delete exercises you didn't create", "danger")
+		return redirect(url_for('my_articles'))
+	result = cur.execute("DELETE FROM exercises WHERE id = %s", [id])
+	result = cur.execute("DELETE FROM user_exercise WHERE exercise_id = %s", [id])
+	mysql.connection.commit()
+	cur.close()
+
+	flash("Exercise deleted", 'success')
+	return redirect(url_for('find_exercises'))
+
+@app.route('/remove_exercise/<string:id>', methods=['POST'])
+@is_logged_in
+def remove_exercise(id):
+	cur = mysql.connection.cursor()
+	result = cur.execute("DELETE FROM user_exercise WHERE user_id = %s AND exercise_id = %s", (getUserID(session['username']), id))
+	mysql.connection.commit()
+	cur.close()
+
+	flash("Exercise removed", 'success')
+	return redirect(url_for('my_exercises'))
+
+@app.route('/find_exercises')
+@is_logged_in
+def find_exercises():
+	cur = mysql.connection.cursor()
+	requests = cur.execute("SELECT * FROM exercises")
+	exercises = list(cur.fetchall())
+	requests = cur.execute("SELECT * FROM user_exercise WHERE user_id = %s", [getUserID(session["username"])])
+	my_exercises = cur.fetchall()
+	my_ids = {}
+	indexes = []
+	for exercise in my_exercises:
+		my_ids[exercise['exercise_id']] = 1
+	for index, exercise in enumerate(exercises):
+		if exercise['id'] in my_ids:
+			indexes.append(index)
+	for index in sorted(indexes, reverse=True):
+		del exercises[index]
+	cur.close()
+	return render_template('find_exercises.html', exercises=tuple(exercises), CHARACTER_LIST=CHARACTER_LIST)
+
+@app.route('/add_exercise/<string:id>', methods=['POST'])
+@is_logged_in
+def add_exercise(id):
+	cur = mysql.connection.cursor()
+	userID = getUserID(session['username'])
+	result = cur.execute("INSERT INTO user_exercise (user_id, exercise_id, priority) VALUES (%s, %s, 1)", (userID, id))
+	mysql.connection.commit()
+	cur.close()
+	flash("Exercise added", "success")
+	return redirect(url_for('find_exercises'))
 
 #RegisterForm, wtform
 class RegisterForm(Form):
@@ -226,7 +280,7 @@ def login():
 				session['username'] = username
 
 				flash('You are now logged in', 'success')
-				return redirect(url_for('train'))
+				return redirect(url_for('training'))
 			else:
 				error = 'Invalid login'
 				app.logger.info('PASSWORD NOT MATCHED')
@@ -250,70 +304,71 @@ def logout():
 	flash('Successfully logged out', 'success')
 	return redirect(url_for('index'))
 
+#Training Form Class
+class TrainingForm(Form):
+	time = IntegerField("Time", [validators.NumberRange(min = 15, max = 90)])
+	main = SelectField('Main', choices=CHARACTER_LIST, coerce=int)
+	opponent = SelectField('Opponent', choices=CHARACTER_LIST, coerce=int)
+
 @app.route('/training')
 @is_logged_in
-def train():
-
+def training():
 	cur = mysql.connection.cursor()
-
-	result = cur.execute("SELECT * FROM exercises")
-
+	userID = getUserID(session['username'])
+	requests = cur.execute("SELECT * FROM user_exercise INNER JOIN exercises ON user_exercise.exercise_id=exercises.id WHERE user_exercise.user_id=%s", [userID])
 	exercises = cur.fetchall()
+	request = cur.execute("SELECT * FROM train_settings WHERE id=%s", [getUserID(session['username'])])
+	settings = cur.fetchone()
 
+	updated_exercises = trainingAlgorithms.default_training_algorithm(exercises, settings)
 	cur.close()
-	if result > 0:
-		return render_template('train.html', exercises=exercises, CHARACTER_LIST=CHARACTER_LIST)
+	if requests > 0:
+		return render_template('training.html', exercises=updated_exercises, CHARACTER_LIST=CHARACTER_LIST, PRIORITY_LIST=PRIORITY_LIST)
 	else:
-		msg = 'No articles found'
-		return render_template('train.html', msg=msg)
+		msg = "No exercises found, start by adding an exercise!"
+		return render_template('training.html', msg=msg)
 
 
-@app.route('/edit_exercise/<string:id>', methods=['GET', 'POST'])
+@app.route('/training_settings', methods=['GET', 'POST'])
 @is_logged_in
-def edit_exercise(id):
-
-	#Create cursor
+def training_settings():
 	cur = mysql.connection.cursor()
-
-	#Get article
-	result = cur.execute("SELECT * FROM exercises WHERE id = %s", [id])
-	exercise = cur.fetchone()
-
-	#Get form
-	form = ExerciseForm(request.form)
-	#Populate article form fields
-	form.title.data = article['title']
-	form.description.data = article['description']
+	result = cur.execute("SELECT * FROM train_settings WHERE id = %s", [getUserID(session['username'])])
+	if result < 1:
+		cur.execute("INSERT INTO train_settings(id, time, main, opponent) VALUES (%s, 25, 0, 0)", [getUserID(session['username'])])
+		mysql.connection.commit()
+		result = cur.execute("SELECT * FROM train_settings WHERE id = %s", [getUserID(session['username'])])
+	settings = cur.fetchone()
+	form = TrainingForm(request.form)
+	form.time.data = settings['time']
+	form.main.data = settings['main']
+	form.opponent.data = settings['opponent']
 
 	if(request.method == 'POST' and form.validate()):
-		title = request.form['title']
-		body = request.form['body']
-
 		cur = mysql.connection.cursor()
-
-		cur.execute("UPDATE articles SET title=%s, body=%s WHERE id = %s", (title, body, article['id']))
-
+		timeSpent = request.form['time']
+		main = request.form['main']
+		opponent = request.form['opponent']
+		cur.execute("UPDATE train_settings SET time=%s, main=%s, opponent=%s WHERE id = %s", (timeSpent, main, opponent, getUserID(session['username'])))
 		mysql.connection.commit()
 
 		cur.close()
+		flash("Settings Updated", "success")
+		return redirect(url_for('training'))
 
-		flash("Article Updated", "success")
-		
-		return redirect(url_for('train'))
+	return render_template('training_settings.html', form=form, CHARACTER_LIST=CHARACTER_LIST)
 
-	return render_template('edit_article.html', form=form)
-
-@app.route('/delete_exercise/<string:id>', methods=['POST'])
+@app.route('/set_priority/<string:exercise_id>/<string:priority>', methods=['GET', 'POST'])
 @is_logged_in
-def delete_exercise(id):
+def edit_priorities(exercise_id, priority):
 	cur = mysql.connection.cursor()
-
-	result = cur.execute("DELETE FROM exercises WHERE id = %s", [id])
+	user_id = getUserID(session['username'])
+	cur.execute("UPDATE user_exercise SET priority=%s WHERE user_id=%s AND exercise_id=%s", (priority, user_id, exercise_id))
 	mysql.connection.commit()
 	cur.close()
-
-	flash("Exercise deleted", 'success')
-	return redirect(url_for('exercise'))
+	
+	flash("Priority Updated", "success")
+	return redirect(url_for('my_exercises'))
 
 if __name__ == '__main__':
 	app.secret_key='secret123'

@@ -1,0 +1,46 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1>My Exercises</h1>
+  <a class='btn btn-primary' href='/find_exercises'>Find Exercise</a>
+  <a class='btn btn-success' href='/create_exercise'>Create Exercise</a>
+  <hr>
+  <table class='table table-striped'>
+  	<tr>
+  	  <th>Title</th>
+      <th>Author</th>
+      <th>Type</th>
+  	  <th>Character</th>
+      <th>Opponent</th>
+      <th>Priority</th>
+      <th></th>
+      <th></th>
+  	</tr>
+  	{% for exercise in exercises %}
+  	  <tr>
+  	  	<td><a href="exercise/{{exercise.id}}" class="btn btn-outline-primary">{{exercise.title}}</td>
+        <td>{{exercise.author}}</td>
+        <td>{{exercise.exercise_type}}</td>
+        <td>{{CHARACTER_LIST[exercise.main][1]}}</td>
+  	  	<td>{{CHARACTER_LIST[exercise.opponent][1]}}</td>
+        <td>
+          <div class="dropdown">
+            <button class="btn btn-outline-success" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              {{PRIORITY_LIST[exercise.priority][1]}}
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+              <a class="dropdown-item" href="../set_priority/{{exercise.id}}/0">Fundamental</a>
+              <a class="dropdown-item" href="../set_priority/{{exercise.id}}/1">Maintain</a>
+              <a class="dropdown-item" href="../set_priority/{{exercise.id}}/2">Learning</a>
+            </div>
+          </div>
+        </td>
+        <td>
+          <form action="{{url_for('remove_exercise', id=exercise.id)}}" method="post">
+            <input type="submit" value="Remove" class="btn btn-danger">
+          </form>
+        </td>
+  	  </tr>
+  	{% endfor %}
+  </table>
+{% endblock %}

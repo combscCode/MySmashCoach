@@ -1,0 +1,28 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1>Today's Training Session</h1>
+  <a class='btn btn-primary' href='/training_settings'>Edit Training Settings</a>
+  <a class='btn btn-success' href='/training'>Generate New Session</a>
+  <hr>
+  <table class='table table-striped'>
+    <tr>
+      <th>Title</th>
+      <th>Time Spent</th>
+      <th>Type</th>
+      <th>Character</th>
+      <th>Opponent</th>
+      <th>Priority</th>
+    </tr>
+    {% for exercise in exercises %}
+      <tr>
+        <td><a href="exercise/{{exercise.id}}" class="btn btn-outline-primary">{{exercise.title}}</td>
+        <td>{{exercise.time}} Minutes</td>
+        <td>{{exercise.exercise_type}}</td>
+        <td>{{CHARACTER_LIST[exercise.main][1]}}</td>
+        <td>{{CHARACTER_LIST[exercise.opponent][1]}}</td>
+        <td>{{PRIORITY_LIST[exercise.priority][1]}}</td>
+      </tr>
+    {% endfor %}
+  </table>
+{% endblock %}

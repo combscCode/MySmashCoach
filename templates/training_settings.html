@@ -1,21 +1,24 @@
 {% extends 'layout.html' %}
 
 {% block body %}
-  <h1>Training Settings</h1>
-  <a class='btn btn-success' href='/training'>Start Training!</a>
+
+  <h1>Training Settings</small></h1>
+  
   <hr>
-  <table class='table table-striped'>
-  	<tr>
-  	  <th>Title</th>
-  	  <th>Character</th>
-      <th>Opponent</th>
-  	</tr>
-  	{% for skill in skills %}
-  	  <tr>
-  	  	<td><a href="skill/{{skill.id}}" class="btn btn-outline-primary">{{skill.title}}</td>
-  	  	<td>{{CHARACTER_LIST[skill.main][1]}}</td>
-        <td>{{CHARACTER_LIST[skill.opponent][1]}}</td>
-  	  </tr>
-  	{% endfor %}
-  </table>
+  {% from 'includes/_formhelpers.html' import render_field %}
+  <form action="" method="POST">
+  	<h3>Time To Spend Training</h3>
+  	<div class="form-group">
+      {{ render_field(form.time, class_="form-control") }}
+  	</div>
+  	<h3>Matchup to emphasize</h3>
+  	<div class="form-group">
+      {{ render_field(form.main, class_="form-control") }}
+  	</div>
+  	<div class="form-group">
+      {{ render_field(form.opponent, class_="form-control") }}
+  	</div>
+  	<p><input class="btn btn-primary" type="submit" value="Submit"></p>
+  </form>
+
 {% endblock %}

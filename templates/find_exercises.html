@@ -1,12 +1,13 @@
 {% extends 'layout.html' %}
 
 {% block body %}
-  <h1>Exercises</h1>
-  <a class='btn btn-success' href='/create_exercise'>Create Exercise</a>
+  <h1>All Exercises</h1>
+  <a href="my_exercises" class="btn btn-primary"> Back</a>
   <hr>
   <table class='table table-striped'>
   	<tr>
   	  <th>Title</th>
+      <th>Author</th>
       <th>Type</th>
   	  <th>Character</th>
       <th>Opponent</th>
@@ -16,14 +17,22 @@
   	{% for exercise in exercises %}
   	  <tr>
   	  	<td><a href="exercise/{{exercise.id}}" class="btn btn-outline-primary">{{exercise.title}}</td>
-        <td>{{exercise.type}}</td>
+        <td>{{exercise.author}}</td>
+        <td>{{exercise.exercise_type}}</td>
         <td>{{CHARACTER_LIST[exercise.main][1]}}</td>
   	  	<td>{{CHARACTER_LIST[exercise.opponent][1]}}</td>
-        <td><a href="edit_exercise/{{exercise.id}}" class="btn btn-secondary float-right">Edit</a></td>
+        {% if session.username == exercise.author %}
         <td>
           <form action="{{url_for('delete_exercise', id=exercise.id)}}" method="post">
-            <input type="hidden" name="method" value="DELETE">
-            <input type="submit" value="Delete" class="btn btn-danger">
+            <input type="submit" value="Delete" class="btn btn-danger float-right">
+          </form>
+        </td>
+        {% else %}
+        <td></td>
+        {% endif %}
+        <td>
+          <form action="{{url_for('add_exercise', id=exercise.id)}}" method="post">
+            <input type="submit" value="Add To My Exercises" class="btn btn-success float-right">
           </form>
         </td>
   	  </tr>

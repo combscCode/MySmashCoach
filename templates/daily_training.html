@@ -1,0 +1,29 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1>Today's Training Session</h1>
+  <a class='btn btn-primary' href='/training'>Edit Training Settings</a>
+  <hr>
+  <table class='table table-striped'>
+  	<tr>
+  	  <th>Title</th>
+      <th>Time Spent</th>
+      <th>Type</th>
+      <th>Priority</th>
+      <th></th>
+  	</tr>
+  	{% for exercise in exercises %}
+  	  <tr>
+  	  	<td><a href="exercise/{{exercise.id}}" class="btn btn-outline-primary">{{exercise.title}}</td>
+        <td>{{exercise.time}} Minutes</td>
+        <td>{{exercise.exercise_type}}</td>
+        <td>{{PRIORITY_LIST[exercise.priority][1]}}</td>
+        <td>
+          <form action="{{url_for('my_exercises', id=exercise.id)}}" method="get">
+            <input type="submit" value="Replace" class="btn btn-danger">
+          </form>
+        </td>
+  	  </tr>
+  	{% endfor %}
+  </table>
+{% endblock %}

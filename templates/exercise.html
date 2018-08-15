@@ -3,9 +3,14 @@
 {% block body %}
   <div class="container-fluid">
     <h1>{{exercise.title}}</h1>
+    <h3><small>Created by: {{exercise.author}}</small></h3>
+    <h3><small>Type: {{exercise.exercise_type}}</small></h3>
+    {% if exercise.author == session.username %}
+    <td><a href="../edit_exercise/{{exercise.id}}" class="btn btn-primary">Edit Exercise</a></td>
+    {% endif %}
     <hr>
   </div>
   <div class="container-fluid">
-  	{{exercise.body | safe}}
+  	{{exercise.description | safe}}
   </div>
 {% endblock %}
