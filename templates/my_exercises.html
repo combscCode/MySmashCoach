@@ -4,6 +4,12 @@
   <h1>My Exercises</h1>
   <a class='btn btn-primary' href='/find_exercises'>Find Exercise</a>
   <a class='btn btn-success' href='/create_exercise'>Create Exercise</a>
+  <button class="btn btn-warning dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    Sort By
+  </button>
+  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+    <a class="dropdown-item" href="">TO BE IMPLEMENTED</a>
+  </div>
   <hr>
   <table class='table table-striped'>
   	<tr>
@@ -13,7 +19,6 @@
   	  <th>Character</th>
       <th>Opponent</th>
       <th>Priority</th>
-      <th></th>
       <th></th>
   	</tr>
   	{% for exercise in exercises %}
@@ -29,9 +34,9 @@
               {{PRIORITY_LIST[exercise.priority][1]}}
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-              <a class="dropdown-item" href="../set_priority/{{exercise.id}}/0">Fundamental</a>
-              <a class="dropdown-item" href="../set_priority/{{exercise.id}}/1">Maintain</a>
-              <a class="dropdown-item" href="../set_priority/{{exercise.id}}/2">Learning</a>
+              {% for priority in PRIORITY_LIST %}
+              <a class="dropdown-item" href="../set_priority/{{exercise.id}}/{{priority[0]}}">{{priority[1]}}</a>
+              {% endfor %}
             </div>
           </div>
         </td>

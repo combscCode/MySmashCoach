@@ -280,7 +280,7 @@ def login():
 				session['username'] = username
 
 				flash('You are now logged in', 'success')
-				return redirect(url_for('training'))
+				return redirect(url_for('my_exercises'))
 			else:
 				error = 'Invalid login'
 				app.logger.info('PASSWORD NOT MATCHED')
@@ -321,8 +321,15 @@ def training():
 	settings = cur.fetchone()
 
 	updated_exercises = trainingAlgorithms.default_training_algorithm(exercises, settings)
+	totalTime = 0
+	for exercise in updated_exercises:
+		totalTime += exercise['time']
+	
 	cur.close()
 	if requests > 0:
+		if totalTime < settings['time']:
+			warning = "You need to add more exercises to have a complete training schedule!"
+			return render_template('training.html', exercises=updated_exercises, CHARACTER_LIST=CHARACTER_LIST, PRIORITY_LIST=PRIORITY_LIST, warning=warning)
 		return render_template('training.html', exercises=updated_exercises, CHARACTER_LIST=CHARACTER_LIST, PRIORITY_LIST=PRIORITY_LIST)
 	else:
 		msg = "No exercises found, start by adding an exercise!"
