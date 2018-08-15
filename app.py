@@ -1,8 +1,8 @@
 from flask import Flask, render_template, flash, redirect, url_for, session, logging, request
-from flask_mysqldb import MySQL
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators, SelectField, IntegerField
 from passlib.hash import sha256_crypt
 from functools import wraps
+from flask_mysqldb import MySQL
 import trainingAlgorithms
 
 CHARACTER_LIST = [(0, "Any"), (1, "Fox"), (2, "Falco"), (3, "Marth"), (4, "Sheik"), (5, "Jigglypuff"),
@@ -35,12 +35,6 @@ def is_logged_in(f):
 			flash("Unauthorized, please log in", 'danger')
 			return redirect(url_for('login'))
 	return wrap
-
-def getUserID(username):
-	cur = mysql.connection.cursor()
-	user = cur.execute("SELECT * FROM users WHERE username=%s", [username])
-	user = cur.fetchone()
-	return user['id']
 
 @app.route('/')
 def index():
@@ -75,8 +69,12 @@ class ExerciseForm(Form):
 @is_logged_in
 def my_exercises():
 	cur = mysql.connection.cursor()
-	userID = getUserID(session['username'])
-	requests = cur.execute("SELECT * FROM user_exercise INNER JOIN exercises ON user_exercise.exercise_id=exercises.id WHERE user_exercise.user_id=%s ORDER BY priority", [userID])
+	userID = session['id']
+	sort = request.args.get('sort')
+	if sort is None:
+		requests = cur.execute("SELECT * FROM user_exercise INNER JOIN exercises ON user_exercise.exercise_id=exercises.id WHERE user_exercise.user_id=%s ORDER BY priority", [userID])
+	else:
+		requests = cur.execute("SELECT * FROM user_exercise INNER JOIN exercises ON user_exercise.exercise_id=exercises.id WHERE user_exercise.user_id=%s ORDER BY " + sort, (str(userID)))
 	exercises = cur.fetchall()
 	cur.close()
 	if requests > 0:
@@ -101,7 +99,7 @@ def create_exercise():
 		mysql.connection.commit()
 		result = cur.execute("SELECT id FROM exercises WHERE title=%s AND main=%s AND opponent=%s", (title, main, opponent))
 		exercise_id = cur.fetchone()
-		cur.execute("INSERT INTO user_exercise(user_id, exercise_id, priority) VALUES(%s, %s, %s)", (getUserID(session['username']), exercise_id['id'], priority))
+		cur.execute("INSERT INTO user_exercise(user_id, exercise_id, priority) VALUES(%s, %s, %s)", (session['id'], exercise_id['id'], priority))
 		mysql.connection.commit()
 		cur.close()
 		flash("Exercise added", 'success')
@@ -186,7 +184,7 @@ def delete_exercise(id):
 @is_logged_in
 def remove_exercise(id):
 	cur = mysql.connection.cursor()
-	result = cur.execute("DELETE FROM user_exercise WHERE user_id = %s AND exercise_id = %s", (getUserID(session['username']), id))
+	result = cur.execute("DELETE FROM user_exercise WHERE user_id = %s AND exercise_id = %s", (session['id'], id))
 	mysql.connection.commit()
 	cur.close()
 
@@ -197,9 +195,15 @@ def remove_exercise(id):
 @is_logged_in
 def find_exercises():
 	cur = mysql.connection.cursor()
-	requests = cur.execute("SELECT * FROM exercises")
-	exercises = list(cur.fetchall())
-	requests = cur.execute("SELECT * FROM user_exercise WHERE user_id = %s", [getUserID(session["username"])])
+	sort = request.args.get('sort')
+	if sort is None:
+		requests = cur.execute("SELECT * FROM exercises")
+		exercises = list(cur.fetchall())
+		requests = cur.execute("SELECT * FROM user_exercise WHERE user_id = %s", [session["id"]])
+	else:
+		requests = cur.execute("SELECT * FROM exercises ORDER BY " + sort)
+		exercises = list(cur.fetchall())
+		requests = cur.execute("SELECT * FROM user_exercise WHERE user_id = %s", [session["id"]])
 	my_exercises = cur.fetchall()
 	my_ids = {}
 	indexes = []
@@ -217,7 +221,7 @@ def find_exercises():
 @is_logged_in
 def add_exercise(id):
 	cur = mysql.connection.cursor()
-	userID = getUserID(session['username'])
+	userID = session['id']
 	result = cur.execute("INSERT INTO user_exercise (user_id, exercise_id, priority) VALUES (%s, %s, 1)", (userID, id))
 	mysql.connection.commit()
 	cur.close()
@@ -278,6 +282,7 @@ def login():
 				app.logger.info('PASSWORD MATCHED')
 				session['logged_in'] = True
 				session['username'] = username
+				session['id'] = data['id']
 
 				flash('You are now logged in', 'success')
 				return redirect(url_for('my_exercises'))
@@ -314,10 +319,10 @@ class TrainingForm(Form):
 @is_logged_in
 def training():
 	cur = mysql.connection.cursor()
-	userID = getUserID(session['username'])
+	userID = session['id']
 	requests = cur.execute("SELECT * FROM user_exercise INNER JOIN exercises ON user_exercise.exercise_id=exercises.id WHERE user_exercise.user_id=%s", [userID])
 	exercises = cur.fetchall()
-	request = cur.execute("SELECT * FROM train_settings WHERE id=%s", [getUserID(session['username'])])
+	request = cur.execute("SELECT * FROM train_settings WHERE id=%s", [session['id']])
 	settings = cur.fetchone()
 
 	updated_exercises = trainingAlgorithms.default_training_algorithm(exercises, settings)
@@ -340,11 +345,11 @@ def training():
 @is_logged_in
 def training_settings():
 	cur = mysql.connection.cursor()
-	result = cur.execute("SELECT * FROM train_settings WHERE id = %s", [getUserID(session['username'])])
+	result = cur.execute("SELECT * FROM train_settings WHERE id = %s", [session['id']])
 	if result < 1:
-		cur.execute("INSERT INTO train_settings(id, time, main, opponent) VALUES (%s, 25, 0, 0)", [getUserID(session['username'])])
+		cur.execute("INSERT INTO train_settings(id, time, main, opponent) VALUES (%s, 25, 0, 0)", [session['id']])
 		mysql.connection.commit()
-		result = cur.execute("SELECT * FROM train_settings WHERE id = %s", [getUserID(session['username'])])
+		result = cur.execute("SELECT * FROM train_settings WHERE id = %s", [session['id']])
 	settings = cur.fetchone()
 	form = TrainingForm(request.form)
 	form.time.data = settings['time']
@@ -356,7 +361,7 @@ def training_settings():
 		timeSpent = request.form['time']
 		main = request.form['main']
 		opponent = request.form['opponent']
-		cur.execute("UPDATE train_settings SET time=%s, main=%s, opponent=%s WHERE id = %s", (timeSpent, main, opponent, getUserID(session['username'])))
+		cur.execute("UPDATE train_settings SET time=%s, main=%s, opponent=%s WHERE id = %s", (timeSpent, main, opponent, session['id']))
 		mysql.connection.commit()
 
 		cur.close()
@@ -369,7 +374,7 @@ def training_settings():
 @is_logged_in
 def edit_priorities(exercise_id, priority):
 	cur = mysql.connection.cursor()
-	user_id = getUserID(session['username'])
+	user_id = session['id']
 	cur.execute("UPDATE user_exercise SET priority=%s WHERE user_id=%s AND exercise_id=%s", (priority, user_id, exercise_id))
 	mysql.connection.commit()
 	cur.close()

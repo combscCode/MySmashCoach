@@ -3,6 +3,16 @@
 {% block body %}
   <h1>All Exercises</h1>
   <a href="my_exercises" class="btn btn-primary"> Back</a>
+  <button class="btn btn-warning dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    Sort By
+  </button>
+  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+    <a class="dropdown-item" href="?sort=title">Title</a>
+    <a class="dropdown-item" href="?sort=author">Author</a>
+    <a class="dropdown-item" href="?sort=exercise_type">Type</a>
+    <a class="dropdown-item" href="?sort=main">Character</a>
+    <a class="dropdown-item" href="?sort=opponent">Opponent</a>
+  </div>
   <hr>
   <table class='table table-striped'>
   	<tr>
