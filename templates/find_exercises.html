@@ -8,6 +8,7 @@
   </button>
   <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
     <a class="dropdown-item" href="?sort=title">Title</a>
+    <a class="dropdown-item" href="?sort=popularity&ord=DESC">Popularity</a>
     <a class="dropdown-item" href="?sort=author">Author</a>
     <a class="dropdown-item" href="?sort=exercise_type">Type</a>
     <a class="dropdown-item" href="?sort=main">Character</a>
@@ -17,6 +18,7 @@
   <table class='table table-striped'>
   	<tr>
   	  <th>Title</th>
+      <th>Popularity</th>
       <th>Author</th>
       <th>Type</th>
   	  <th>Character</th>
@@ -27,6 +29,7 @@
   	{% for exercise in exercises %}
   	  <tr>
   	  	<td><a href="exercise/{{exercise.id}}" class="btn btn-outline-primary">{{exercise.title}}</td>
+        <td>{{exercise.popularity}}</td>
         <td>{{exercise.author}}</td>
         <td>{{exercise.exercise_type}}</td>
         <td>{{CHARACTER_LIST[exercise.main][1]}}</td>

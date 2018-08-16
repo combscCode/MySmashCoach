@@ -1,0 +1,24 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1>All Users</h1>
+  <button class="btn btn-warning dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    Sort By
+  </button>
+  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+    <a class="dropdown-item" href="?sort=username">Username</a>
+    <a class="dropdown-item" href="?sort=reputation&ord=DESC">Reputation</a>
+  </div>
+  <hr>
+  <table class='table table-striped'>
+  	<tr>
+  	  <th>Username</th>
+      <th>Reputation</th>
+  	</tr>
+  	{% for user in users %}
+  	  <tr>
+  	  	<td><a href="user/{{user.username}}" class="btn btn-outline-primary">{{user.username}}</td>
+        <td>{{user.reputation}}</td>
+  	{% endfor %}
+  </table>
+{% endblock %}

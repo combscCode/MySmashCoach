@@ -1,0 +1,38 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+  <h1>{{username}}'s Schedule</h1>
+  <a class='btn btn-primary' href='/users'>Back</a>
+  <button class="btn btn-warning dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    Sort By
+  </button>
+  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+    <a class="dropdown-item" href="?sort=title">Title</a>
+    <a class="dropdown-item" href="?sort=author">Author</a>
+    <a class="dropdown-item" href="?sort=exercise_type">Type</a>
+    <a class="dropdown-item" href="?sort=main">Character</a>
+    <a class="dropdown-item" href="?sort=opponent">Opponent</a>
+    <a class="dropdown-item" href="?sort=priority">Priority</a>
+  </div>
+  <hr>
+  <table class='table table-striped'>
+    <tr>
+      <th>Title</th>
+      <th>Author</th>
+      <th>Type</th>
+      <th>Character</th>
+      <th>Opponent</th>
+      <th>Priority</th>
+    </tr>
+    {% for exercise in exercises %}
+      <tr>
+        <td><a href="../exercise/{{exercise.id}}" class="btn btn-outline-primary">{{exercise.title}}</td>
+        <td>{{exercise.author}}</td>
+        <td>{{exercise.exercise_type}}</td>
+        <td>{{CHARACTER_LIST[exercise.main][1]}}</td>
+        <td>{{CHARACTER_LIST[exercise.opponent][1]}}</td>
+        <td>{{PRIORITY_LIST[exercise.priority][1]}}</td>
+      </tr>
+    {% endfor %}
+  </table>
+{% endblock %}

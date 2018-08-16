@@ -9,7 +9,7 @@ CHARACTER_LIST = [(0, "Any"), (1, "Fox"), (2, "Falco"), (3, "Marth"), (4, "Sheik
 (6, "Peach"), (7, "Ice Climbers"), (8, "Captain Falcon"), (9, "Pikachu"), (10, "Samus"), (11, "Dr. Mario"),
 (12, "Yoshi"), (13, "Luigi"), (14, "Ganondorf"), (15, "Mario"), (16, "Young Link"), (17, "Donkey Kong"),
 (18, "Link"), (19, "Mr. Game & Watch"), (20, "Roy"), (21, "Mewtwo"), (22, "Zelda"), (23, "Ness"), (24, "Pichu"), 
-(25, "Bowser"), (26, "Kirby")]
+(25, "Bowser"), (26, "Kirby"), (27, "Spacies"), (28, "Fast Fallers"), (29, "Floaties")]
 
 PRIORITY_LIST = [(0, "Fundamental"), (1, "Maintain"), (2, "Learning")]
 
@@ -25,6 +25,19 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 #init MySQL
 mysql = MySQL(app)
 
+
+def get_exercise_author(id):
+	cur = mysql.connection.cursor()
+	result = cur.execute("SELECT * FROM exercises WHERE id=%s", [id])
+	exercise = cur.fetchone()
+	return exercise['author']
+
+def get_user_id(username):
+	cur = mysql.connection.cursor()
+	result = cur.execute("SELECT * FROM users WHERE username=%s", [username])
+	user = cur.fetchone()
+	return user['id']
+
 #Check if user is logged in
 def is_logged_in(f):
 	@wraps(f)
@@ -34,6 +47,16 @@ def is_logged_in(f):
 		else:
 			flash("Unauthorized, please log in", 'danger')
 			return redirect(url_for('login'))
+	return wrap
+
+def is_admin(f):
+	@wraps(f)
+	def wrap(*args, **kwargs):
+		if 'username' in session and session['username'] == "Duo":
+			return f(*args, **kwargs)
+		else:
+			flash("Unauthorized", 'danger')
+			return redirect(url_for('home'))
 	return wrap
 
 @app.route('/')
@@ -159,7 +182,7 @@ def edit_exercise(id):
 
 		flash("Exercise Edited", "success")
 		
-		return redirect(url_for('training'))
+		return redirect(url_for('my_exercises'))
 
 	return render_template('edit_exercise.html', form=form)
 
@@ -186,6 +209,10 @@ def remove_exercise(id):
 	cur = mysql.connection.cursor()
 	result = cur.execute("DELETE FROM user_exercise WHERE user_id = %s AND exercise_id = %s", (session['id'], id))
 	mysql.connection.commit()
+	result = cur.execute("UPDATE exercises SET popularity = popularity - 1 WHERE id=%s", [id])
+	mysql.connection.commit()
+	result = cur.execute("UPDATE users SET reputation = reputation - 1 WHERE username=%s", [get_exercise_author(id)])
+	mysql.connection.commit()
 	cur.close()
 
 	flash("Exercise removed", 'success')
@@ -196,12 +223,17 @@ def remove_exercise(id):
 def find_exercises():
 	cur = mysql.connection.cursor()
 	sort = request.args.get('sort')
+	order = request.args.get('ord')
 	if sort is None:
-		requests = cur.execute("SELECT * FROM exercises")
+		requests = cur.execute("SELECT * FROM exercises ORDER BY popularity DESC")
+		exercises = list(cur.fetchall())
+		requests = cur.execute("SELECT * FROM user_exercise WHERE user_id = %s", [session["id"]])
+	elif order is None:
+		requests = cur.execute("SELECT * FROM exercises ORDER BY " + sort)
 		exercises = list(cur.fetchall())
 		requests = cur.execute("SELECT * FROM user_exercise WHERE user_id = %s", [session["id"]])
 	else:
-		requests = cur.execute("SELECT * FROM exercises ORDER BY " + sort)
+		requests = cur.execute("SELECT * FROM exercises ORDER BY " + sort + " " + order)
 		exercises = list(cur.fetchall())
 		requests = cur.execute("SELECT * FROM user_exercise WHERE user_id = %s", [session["id"]])
 	my_exercises = cur.fetchall()
@@ -224,6 +256,11 @@ def add_exercise(id):
 	userID = session['id']
 	result = cur.execute("INSERT INTO user_exercise (user_id, exercise_id, priority) VALUES (%s, %s, 1)", (userID, id))
 	mysql.connection.commit()
+	result = cur.execute("UPDATE exercises SET popularity = popularity + 1 WHERE id=%s", [id])
+	mysql.connection.commit()
+	result = cur.execute("UPDATE users SET reputation = reputation + 1 WHERE username=%s", [get_exercise_author(id)])
+	mysql.connection.commit()
+
 	cur.close()
 	flash("Exercise added", "success")
 	return redirect(url_for('find_exercises'))
@@ -381,6 +418,59 @@ def edit_priorities(exercise_id, priority):
 	
 	flash("Priority Updated", "success")
 	return redirect(url_for('my_exercises'))
+
+@app.route('/users')
+@is_logged_in
+def users():
+	cur = mysql.connection.cursor()
+	sort = request.args.get('sort')
+	order = request.args.get('ord')
+	if sort is None:
+		requests = cur.execute("SELECT * FROM users ORDER BY reputation DESC")
+		users = cur.fetchall()
+	elif order is None:
+		requests = cur.execute("SELECT * FROM users ORDER BY " + sort)
+		users = cur.fetchall()
+	else:
+		requests = cur.execute("SELECT * FROM users ORDER BY " + sort + " " + order)
+		users = cur.fetchall()
+	return render_template('users.html', users=users)
+
+@app.route('/user/<string:username>')
+@is_logged_in
+def user(username):
+	cur = mysql.connection.cursor()
+	user_id = get_user_id(username)
+	sort = request.args.get('sort')
+	if sort is None:
+		requests = cur.execute("SELECT * FROM user_exercise INNER JOIN exercises ON user_exercise.exercise_id=exercises.id WHERE user_exercise.user_id=%s ORDER BY priority", [user_id])
+	else:
+		requests = cur.execute("SELECT * FROM user_exercise INNER JOIN exercises ON user_exercise.exercise_id=exercises.id WHERE user_exercise.user_id=%s ORDER BY " + sort, (str(user_id)))
+	exercises = cur.fetchall()
+	cur.close()
+	return render_template('user.html', username=username, exercises=exercises, CHARACTER_LIST=CHARACTER_LIST, PRIORITY_LIST=PRIORITY_LIST)
+
+@app.route('/set_reputation')
+@is_admin
+def set_reputation():
+	cur = mysql.connection.cursor()
+	results = cur.execute("SELECT * FROM exercises")
+	exercises = cur.fetchall()
+	results = cur.execute("SELECT * FROM users")
+	users = cur.fetchall()
+
+	for user in users:
+		reputation = 1
+		for exercise in exercises:
+			if exercise['author'] == user['username']:
+				reputation += exercise['popularity'] - 1
+		cur.execute("UPDATE users SET reputation=%s WHERE username=%s", (reputation, user['username']))
+		mysql.connection.commit()
+	cur.close()
+
+	flash("reputation updated", "success")
+	return redirect(url_for('home'))
+
 
 if __name__ == '__main__':
 	app.secret_key='secret123'
