@@ -11,7 +11,7 @@ CHARACTER_LIST = [(0, "Any"), (1, "Fox"), (2, "Falco"), (3, "Marth"), (4, "Sheik
 (18, "Link"), (19, "Mr. Game & Watch"), (20, "Roy"), (21, "Mewtwo"), (22, "Zelda"), (23, "Ness"), (24, "Pichu"), 
 (25, "Bowser"), (26, "Kirby"), (27, "Spacies"), (28, "Fast Fallers"), (29, "Floaties")]
 
-PRIORITY_LIST = [(0, "Fundamental"), (1, "Maintain"), (2, "Learning")]
+PRIORITY_LIST = [(0, "UNDEFINED"), (1, "Fundamental"), (2, "Maintain"), (3, "Learning")]
 
 app = Flask(__name__)
 
@@ -359,7 +359,7 @@ def training():
 	userID = session['id']
 	requests = cur.execute("SELECT * FROM user_exercise INNER JOIN exercises ON user_exercise.exercise_id=exercises.id WHERE user_exercise.user_id=%s", [userID])
 	exercises = cur.fetchall()
-	request = cur.execute("SELECT * FROM train_settings WHERE id=%s", [session['id']])
+	request = cur.execute("SELECT * FROM training_settings WHERE id=%s", [session['id']])
 	settings = cur.fetchone()
 
 	updated_exercises = trainingAlgorithms.default_training_algorithm(exercises, settings)
@@ -382,11 +382,11 @@ def training():
 @is_logged_in
 def training_settings():
 	cur = mysql.connection.cursor()
-	result = cur.execute("SELECT * FROM train_settings WHERE id = %s", [session['id']])
+	result = cur.execute("SELECT * FROM training_settings WHERE id = %s", [session['id']])
 	if result < 1:
-		cur.execute("INSERT INTO train_settings(id, time, main, opponent) VALUES (%s, 25, 0, 0)", [session['id']])
+		cur.execute("INSERT INTO training_settings(id, time, main, opponent) VALUES (%s, 25, 0, 0)", [session['id']])
 		mysql.connection.commit()
-		result = cur.execute("SELECT * FROM train_settings WHERE id = %s", [session['id']])
+		result = cur.execute("SELECT * FROM training_settings WHERE id = %s", [session['id']])
 	settings = cur.fetchone()
 	form = TrainingForm(request.form)
 	form.time.data = settings['time']
@@ -398,7 +398,7 @@ def training_settings():
 		timeSpent = request.form['time']
 		main = request.form['main']
 		opponent = request.form['opponent']
-		cur.execute("UPDATE train_settings SET time=%s, main=%s, opponent=%s WHERE id = %s", (timeSpent, main, opponent, session['id']))
+		cur.execute("UPDATE training_settings SET time=%s, main=%s, opponent=%s WHERE id = %s", (timeSpent, main, opponent, session['id']))
 		mysql.connection.commit()
 
 		cur.close()
