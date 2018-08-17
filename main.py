@@ -196,6 +196,10 @@ def delete_exercise(id):
 	if result['author'] != session['username']:
 		flash("You cannot delete exercises you didn't create", "danger")
 		return redirect(url_for('my_articles'))
+	result = cur.execute("SELECT * FROM user_exercise WHERE exercise_id = %s", [id])
+	if result < 0:
+		result = cur.execute("UPDATE users SET reputation = reputation + 1 WHERE username=%s", [session['username']])
+		mysql.connection.commit()
 	result = cur.execute("DELETE FROM exercises WHERE id = %s", [id])
 	result = cur.execute("DELETE FROM user_exercise WHERE exercise_id = %s", [id])
 	mysql.connection.commit()
