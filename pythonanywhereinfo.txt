@@ -1,0 +1,9 @@
+virtualenv path:
+/home/combscCode/.virtualenvs/myvirtualenv
+
+Activate using:
+workon myvirtualenv
+
+Check that you're using the virtualenv with:
+which python
+which pip
