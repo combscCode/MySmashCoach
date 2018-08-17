@@ -16,10 +16,10 @@ PRIORITY_LIST = [(0, "Fundamental"), (1, "Maintain"), (2, "Learning")]
 app = Flask(__name__)
 
 #Config MySQL
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'Meowmix1'
-app.config['MYSQL_DB'] = 'myflaskapp'
+app.config['MYSQL_HOST'] = 'combscCode.mysql.pythonanywhere-services.com'
+app.config['MYSQL_USER'] = 'combscCode'
+app.config['MYSQL_PASSWORD'] = 'Horse23Pencil!'
+app.config['MYSQL_DB'] = 'combscCode$default'
 #Acts like a dictionary! Gives things like tuple values
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 #init MySQL
