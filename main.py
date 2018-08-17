@@ -14,6 +14,7 @@ CHARACTER_LIST = [(0, "Any"), (1, "Fox"), (2, "Falco"), (3, "Marth"), (4, "Sheik
 PRIORITY_LIST = [(0, "UNDEFINED"), (1, "Fundamental"), (2, "Maintain"), (3, "Learning")]
 
 app = Flask(__name__)
+app.secret_key='Horse23Pencil!'
 
 #Config MySQL
 app.config['MYSQL_HOST'] = 'combscCode.mysql.pythonanywhere-services.com'
@@ -475,6 +476,5 @@ def set_reputation():
 
 
 if __name__ == '__main__':
-	app.secret_key='secret123'
-	app.run(debug=False)
+	app.run(debug=True)
 
