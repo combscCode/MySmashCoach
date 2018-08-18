@@ -16,11 +16,21 @@ PRIORITY_LIST = [(0, "UNDEFINED"), (1, "Fundamental"), (2, "Maintain"), (3, "Lea
 app = Flask(__name__)
 app.secret_key='Horse23Pencil!'
 
+'''
+# Config MySQL Local Testing
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = 'Meowmix1'
+app.config['MYSQL_DB'] = 'myflaskapp'
+
+'''
 #Config MySQL
 app.config['MYSQL_HOST'] = 'combscCode.mysql.pythonanywhere-services.com'
 app.config['MYSQL_USER'] = 'combscCode'
 app.config['MYSQL_PASSWORD'] = 'Horse23Pencil!'
 app.config['MYSQL_DB'] = 'combscCode$default'
+
+
 #Acts like a dictionary! Gives things like tuple values
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 #init MySQL
@@ -228,20 +238,17 @@ def remove_exercise(id):
 def find_exercises():
 	cur = mysql.connection.cursor()
 	sort = request.args.get('sort')
-	order = request.args.get('ord')
-	if sort is None:
+	main = request.args.get('main')
+	opponent = request.args.get('opponent')
+	if sort is None or sort == "popularity":
 		requests = cur.execute("SELECT * FROM exercises ORDER BY popularity DESC")
 		exercises = list(cur.fetchall())
 		requests = cur.execute("SELECT * FROM user_exercise WHERE user_id = %s", [session["id"]])
-	elif order is None:
-		requests = cur.execute("SELECT * FROM exercises ORDER BY " + sort)
-		exercises = list(cur.fetchall())
-		requests = cur.execute("SELECT * FROM user_exercise WHERE user_id = %s", [session["id"]])
 	else:
-		requests = cur.execute("SELECT * FROM exercises ORDER BY " + sort + " " + order)
+		requests = cur.execute("SELECT * FROM exercises ORDER BY " + sort + ", popularity DESC")
 		exercises = list(cur.fetchall())
 		requests = cur.execute("SELECT * FROM user_exercise WHERE user_id = %s", [session["id"]])
-	my_exercises = cur.fetchall()
+	my_exercises=cur.fetchall()
 	my_ids = {}
 	indexes = []
 	for exercise in my_exercises:
