@@ -119,11 +119,11 @@ def default_training_algorithm(exercises, settings):
 	learning = []
 	updatedExercises = []
 	for exercise in exercises:
-		if exercise['priority'] == 0 and right_character(exercise, settings):
-			fundamentals.append(exercise)
 		if exercise['priority'] == 1 and right_character(exercise, settings):
-			maintain.append(exercise)
+			fundamentals.append(exercise)
 		if exercise['priority'] == 2 and right_character(exercise, settings):
+			maintain.append(exercise)
+		if exercise['priority'] == 3 and right_character(exercise, settings):
 			learning.append(exercise)
 
 	timeLearning = random.randint(int(time/3), int(time/2))
