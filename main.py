@@ -5,6 +5,16 @@ from functools import wraps
 from flask_mysqldb import MySQL
 import trainingAlgorithms
 
+#TODO
+# Add in the ability to link load states for 20xx/uncle punch
+# Spacie matchup should inclue fox/falco stuff
+# You should be able to copy other people's scheudules
+# Training Algorithm: Should be able specify the times for each thing. 
+# Should be able to remove certain exercises that you don't want to do or change the time.
+# Maybe there should be a training object? That way changing the individual exercises allows the
+# Object to update itself easily.
+
+
 CHARACTER_LIST = [(0, "Any"), (1, "Fox"), (2, "Falco"), (3, "Marth"), (4, "Sheik"), (5, "Jigglypuff"),
 (6, "Peach"), (7, "Ice Climbers"), (8, "Captain Falcon"), (9, "Pikachu"), (10, "Samus"), (11, "Dr. Mario"),
 (12, "Yoshi"), (13, "Luigi"), (14, "Ganondorf"), (15, "Mario"), (16, "Young Link"), (17, "Donkey Kong"),
@@ -16,11 +26,13 @@ PRIORITY_LIST = [(0, "UNDEFINED"), (1, "Fundamental"), (2, "Maintain"), (3, "Lea
 app = Flask(__name__)
 app.secret_key='Horse23Pencil!'
 
+
+
 '''
 # Config MySQL Local Testing
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'Meowmix1'
+app.config['MYSQL_PASSWORD'] = 'SECRET'
 app.config['MYSQL_DB'] = 'myflaskapp'
 
 '''

@@ -1,6 +1,9 @@
 import random
 import math
 
+#TODO:
+# If they want to practice a matchup, you should prioritize that char > any. Any can work IF there are no other char exercises.
+
 def default_pick_fundamentals(exercises, minTime, maxTime, totalTime):
 	if len(exercises) == 0:
 		return []
